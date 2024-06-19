@@ -81,7 +81,6 @@ int main(int argc, char * * argv){
     }
 
     cout << "calculating ranges..." << endl;
-    // TODO we could incorporate this calculation in the calc-count part
 
     array<uint32_t, 256> symbol_bots = {};
 
