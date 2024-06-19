@@ -354,10 +354,15 @@ void decode(const string & file_compressed, const string & file_regenerated){
 
             bool symbol_found = false;
 
-            // TODO we could make `symbol_counts` into a vector, so that we don't have to iterate trough the worthless symbols
             for(size_t symbol_s = 0; symbol_s < symbol_counts.size(); ++symbol_s){
 
                 uint32_t symbol_count = symbol_counts.at(symbol_s);
+
+                // TODO we could also try and use a vector for this instead (make another vector like `symbol_count`, and make it contain only the elements that are > 0)
+                if(symbol_count <= 0){
+                    continue;
+                }
+
                 uint32_t symbol_bot = symbol_bots.at(symbol_s);
 
                 // symbol_bot_scaled = remaining_combinations * symbol_bot / remaining_symbols
