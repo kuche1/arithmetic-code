@@ -20,7 +20,7 @@ echo "compiling..."
 
 echo "running..."
 
-time "$HERE/compressor" "$HERE/data/$FILE" "$HERE/data/$FILE-compressed" "$HERE/data/$FILE-regenerated"
+time "$HERE/arithmetic-code" "$HERE/data/$FILE" "$HERE/data/$FILE-compressed" "$HERE/data/$FILE-regenerated"
 
 echo
 

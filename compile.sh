@@ -19,4 +19,4 @@ FLAGS_LIB='-lgmp'
 
 FLAGS="$FLAGS_STANDARD $FLAGS_STRICT $FLAGS_OPTIMISATION $FLAGS_MISC $FLAGS_LIB"
 
-g++ $FLAGS -o "$HERE/compressor" "$HERE/compressor.cpp"
+g++ $FLAGS -o "$HERE/arithmetic-code" "$HERE/arithmetic-code.cpp"
