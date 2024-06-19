@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <vector>
 #include <cstdio>
+#include <thread>
 
 using namespace std;
 
@@ -459,13 +460,14 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, mpz_t num, const string & fi
 }
 
 #define BLOCK_SIZE 81920
-#define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program
+#define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
 
 void encode_multithreaded(const string & file_to_compress, const string & file_compressed){
 
     size_t file_size = get_file_size(file_to_compress);
 
     vector<string> blocks = {};
+    vector<thread> threads = {};
 
     size_t start = 0z;
     size_t iter = 0;
@@ -474,7 +476,8 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
 
         string tmp_file = TMP_FILE_PREFIX + to_string(iter);
 
-        encode_block(file_to_compress, start, BLOCK_SIZE, tmp_file);
+        // encode_block(file_to_compress, start, BLOCK_SIZE, tmp_file);
+        threads.push_back( thread(encode_block, file_to_compress, start, BLOCK_SIZE, tmp_file) );
 
         blocks.push_back(tmp_file);
 
@@ -482,6 +485,10 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
 
         iter += 1;
 
+    }
+
+    for(thread & thr : threads){
+        thr.join();
     }
 
     combine_files_and_delete(file_compressed, blocks);
@@ -498,6 +505,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
     }
 
     vector<string> blocks = {};
+    vector<thread> threads = {};
 
     for(size_t iter = 0;; ++iter){
 
@@ -537,9 +545,16 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
         string tmp_file = TMP_FILE_PREFIX + to_string(iter);
 
         decode_block(symbol_counts, num, tmp_file);
+        // threads.push_back( thread(decode_block, symbol_counts, num, tmp_file) ); // TODO if I use this the decoding fails
 
         blocks.push_back(tmp_file);
 
+    }
+
+    fclose(file_in);
+
+    for(thread & thr : threads){
+        thr.join();
     }
 
     combine_files_and_delete(file_regenerated, blocks);
