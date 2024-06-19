@@ -251,6 +251,8 @@ int main(int argc, char * * argv){
         cout << "reading symbol counts..." << endl;
 
         {
+            symbol_counts = {}; // make sure the code below actually reads the data
+
             for(uint32_t & count : symbol_counts){
 
                 uint32_t big_endian;
