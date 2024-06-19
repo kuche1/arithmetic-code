@@ -16,7 +16,6 @@ HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 
 ### f5d68989ee8a45117b58cc7be63517c358d13da0 (encoding and decoding times are now measured separately)
 
-# FILE=urandom-40960
 # FILE=pmv-10240  #  10k, encode 0m 0,020s, decode 0m 0,219s
 # FILE=pmv-20480  #  20k, encode 0m 0,052s, decode 0m 0,410s
 # FILE=pmv-40960  #  40k, encode 0m 0,154s, decode 0m 0,860s
@@ -26,13 +25,22 @@ HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 
 ### 95f60eb2efdbe1904e590c20ce7cd53a76d0b935 (decoder now detects if symbol count is 0, and skips calculations if so)
 
-# FILE=urandom-40960
-# FILE=pmv-10240  #  10k, decode 0m0,170s
-# FILE=pmv-20480  #  20k, decode 0m0,321s
-  FILE=pmv-40960  #  40k, decode 0m0,712s
-# FILE=pmv-81920  #  80k, decode 0m1,768s
-# FILE=pmv-163840 # 160k, decode 0m5,195s
+# FILE=pmv-10240  #  10k, decode 0m 0,170s
+# FILE=pmv-20480  #  20k, decode 0m 0,321s
+# FILE=pmv-40960  #  40k, decode 0m 0,712s
+# FILE=pmv-81920  #  80k, decode 0m 1,768s
+# FILE=pmv-163840 # 160k, decode 0m 5,195s
 # FILE=pmv-327680 # 320k, decode 1m18,695s
+
+### not commited since results are slower across the board (decoder now uses a vector to track the remaining symbols, rather than checking the count on every iteration)
+
+# FILE=urandom-40960
+# FILE=pmv-10240  #  10k, decode 0m 0,181s
+# FILE=pmv-20480  #  20k, decode 0m 0,343s
+# FILE=pmv-40960  #  40k, decode 0m 0,743s
+# FILE=pmv-81920  #  80k, decode 0m 1,821s
+  FILE=pmv-163840 # 160k, decode 0m 5,298s
+# FILE=pmv-327680 # 320k, decode 1m19,346s
 
 clear
 
