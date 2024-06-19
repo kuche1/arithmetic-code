@@ -8,6 +8,7 @@
 #include <vector>
 #include <cstdio>
 #include <thread>
+#include <memory>
 
 using namespace std;
 
@@ -49,6 +50,24 @@ using namespace std;
 // with uint16_t we can count 2**16 -> 65536      times each character, so if a file consist all of the same character, the can process at max a 64KiB (65536      / 1024 / 1024 / 1024) file
 
 #define SYMBOL_BOTS_TYPE array<uint32_t, 256>
+
+struct fuck_wrapper_around_gmp {
+
+    mpz_t value;
+
+    fuck_wrapper_around_gmp() {
+        mpz_init(value);
+    }
+
+    ~fuck_wrapper_around_gmp() {
+        mpz_clear(value);
+    }
+
+    mpz_t & get() {
+        return value;
+    }
+
+};
 
 SYMBOL_BOTS_TYPE calculate_symbol_bots(const SYMBOL_COUNTS_TYPE & symbol_counts){
 
@@ -342,7 +361,10 @@ void encode_block(const string & file_to_compress, size_t start_pos, size_t bloc
 
 }
 
-void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, mpz_t num, const string & file_regenerated){
+void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_around_gmp> num, const string & file_regenerated){
+
+    // cout << "DBG: num: ";
+    // gmp_printf("%Zd\n", num->get());
 
     cout << "calculating symbol ranges..." << endl;
 
@@ -414,8 +436,8 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, mpz_t num, const string & fi
                 mpz_add(new_bot, bot, symbol_bot_scaled);
                 mpz_add(new_top, new_bot, symbol_count_scaled);
 
-                if(mpz_cmp(num, new_bot) >= 0){ // num >= new_bot
-                    if(mpz_cmp(num, new_top) < 0){ // num < new_top
+                if(mpz_cmp(num->get(), new_bot) >= 0){ // num >= new_bot
+                    if(mpz_cmp(num->get(), new_top) < 0){ // num < new_top
                         symbol_found = true;
                     }
                 }
@@ -454,8 +476,6 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, mpz_t num, const string & fi
     }
 
     mpz_clear(combinations);
-
-    mpz_clear(num);
 
 }
 
@@ -534,18 +554,19 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
         // read data
 
-        // actual data is stored on heap
-        // we can mpz_clear in another thread
-        mpz_t num;
-        mpz_init(num);
-        ASSERT( mpz_inp_raw(num, file_in) != 0);
+        shared_ptr<fuck_wrapper_around_gmp> num = make_shared<fuck_wrapper_around_gmp>();
+
+        mpz_init(num->get());
+
+        ASSERT( mpz_inp_raw(num->get(), file_in) != 0);
 
         // process block
 
         string tmp_file = TMP_FILE_PREFIX + to_string(iter);
 
-        decode_block(symbol_counts, num, tmp_file);
+        // decode_block(symbol_counts, num, tmp_file);
         // threads.push_back( thread(decode_block, symbol_counts, num, tmp_file) ); // TODO if I use this the decoding fails
+        threads.push_back( thread(decode_block, symbol_counts, num, tmp_file) ); // TODO if I use this the decoding fails
 
         blocks.push_back(tmp_file);
 
