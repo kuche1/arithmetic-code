@@ -479,7 +479,7 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
 
 }
 
-#define ENCODER_BLOCK_SIZE 40960 // in bytes
+#define ENCODER_BLOCK_SIZE 20480 // in bytes
 #define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
 
 void encode_multithreaded(const string & file_to_compress, const string & file_compressed){
