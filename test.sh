@@ -14,13 +14,22 @@ HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 
 clear
 
-echo "compiling..."
+echo "~~~ compiling..."
+echo
 
 "$HERE/compile.sh"
 
-echo "running..."
+echo
+echo "~~~ encoding..."
+echo
 
-time "$HERE/arithmetic-code" "$HERE/data/$FILE" "$HERE/data/$FILE-compressed" "$HERE/data/$FILE-regenerated"
+time "$HERE/arithmetic-code" enc "$HERE/data/$FILE" "$HERE/data/$FILE-compressed"
+
+echo
+echo "~~~ decoding..."
+echo
+
+time "$HERE/arithmetic-code" dec "$HERE/data/$FILE-compressed" "$HERE/data/$FILE-regenerated"
 
 echo
 

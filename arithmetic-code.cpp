@@ -422,30 +422,41 @@ void decode(const string & file_compressed, const string & file_regenerated){
 
 }
 
+#define ACTION_ENCODE "enc"
+#define ACTION_DECODE "dec"
+
 int main(int argc, char * * argv){
 
     if(argc != 4){
-        cerr << "You need to provice exactly 2 arguments: the input file and the compressed output" << endl;
-        exit(1);
+        USER_ERR(
+            endl <<
+            "    You need to provice exactly 3 arguments:" << endl <<
+            "        action (`" << ACTION_ENCODE << "` to encode/compress, or `" << ACTION_DECODE "` to decode/decompress)" << endl <<
+            "        input file" << endl <<
+            "        output file" << endl
+        );
     }
 
-    string file_to_compress = argv[1]; // generate input file with: dd if=/dev/urandom of=./urandom bs=1k count=40
-    string file_compressed  = argv[2];
-    string file_regenerated = argv[3];
+    string action = argv[1];
+    string file_in = argv[2];
+    string file_out = argv[3];
 
-    cout << "file_to_compress:" << file_to_compress << endl;
-    cout << "file_compressed:"  << file_compressed  << endl;
-    cout << "file_regenerated:" << file_regenerated << endl;
+    if(action == ACTION_ENCODE){
 
-    // encode
+        encode(file_in, file_out);
 
-    encode(file_to_compress, file_compressed);
+    }else if(action == ACTION_DECODE){
 
-    // decode
+        decode(file_in, file_out);
 
-    decode(file_compressed, file_regenerated);
+    }else{
 
-    // return
+        USER_ERR(
+            "Invalid action `" << action << "`" << endl <<
+            "Only valid actions are `" << ACTION_ENCODE << "` and `" << ACTION_DECODE << "`"
+        );
+
+    }
 
     return 0;
 }
