@@ -38,7 +38,8 @@ using namespace std;
 
 #define SYMBOL_COUNTS_TYPE array<uint32_t, 256>
 // we need 1 count for each byte -> 2**8 -> length needs to be 256
-// with uint32_t we can count 2**32 -> 4294967296 times each character, so if a file consist all of the same character, the can process at max a 4GiB file
+// with uint32_t we can count 2**32 -> 4294967296 times each character, so if a file consist all of the same character, the can process at max a 4GiB (4294967296 / 1024 / 1024 / 1024) file
+// with uint16_t we can count 2**16 -> 65536      times each character, so if a file consist all of the same character, the can process at max a 64KiB (65536      / 1024 / 1024 / 1024) file
 
 #define SYMBOL_BOTS_TYPE array<uint32_t, 256>
 
