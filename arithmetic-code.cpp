@@ -8,6 +8,10 @@
 
 using namespace std;
 
+#ifndef COMMIT_ID
+#define COMMIT_ID "UNKNOWN"
+#endif
+
 #define ERR(...) { \
     cerr << "ERROR: "; \
     cerr << "commit `" << COMMIT_ID << "`, "; \
