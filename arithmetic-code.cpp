@@ -10,7 +10,8 @@ using namespace std;
 
 #define ERR(...) { \
     cerr << "ERROR: "; \
-    cerr << "file `" << __FILE__ << "` "; \
+    cerr << "commit `" << COMMIT_ID << "`, "; \
+    cerr << "file `" << __FILE__ << "`, "; \
     cerr << "line " << __LINE__ << ": "; \
     cerr << __VA_ARGS__; \
     cerr << endl; \
