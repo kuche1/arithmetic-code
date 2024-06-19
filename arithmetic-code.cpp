@@ -429,16 +429,16 @@ void decode(const string & file_compressed, const string & file_regenerated){
 
 }
 
-#define ACTION_ENCODE "enc"
-#define ACTION_DECODE "dec"
-
 int main(int argc, char * * argv){
+
+    const string ACTION_ENCODE = "enc";
+    const string ACTION_DECODE = "dec";
 
     if(argc != 4){
         USER_ERR(
             endl <<
             "    You need to provice exactly 3 arguments:" << endl <<
-            "        action (`" << ACTION_ENCODE << "` to encode/compress, or `" << ACTION_DECODE "` to decode/decompress)" << endl <<
+            "        action (`" << ACTION_ENCODE << "` to encode/compress, or `" << ACTION_DECODE << "` to decode/decompress)" << endl <<
             "        input file" << endl <<
             "        output file" << endl
         );
