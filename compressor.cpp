@@ -98,19 +98,23 @@ int main(int argc, char * * argv){
         }
     }
 
-    cout << "calculating combinations..." << endl;
+    cout << "calculating total number of symbols..." << endl;
 
     uint32_t total_number_of_symbols = 0;
+
+    {
+        for(uint32_t count : symbol_counts){
+            total_number_of_symbols += count;
+            ASSERT(total_number_of_symbols >= count); // overflow
+        }
+    }
+
+    cout << "calculating combinations..." << endl;
 
     mpz_t combinations;
     mpz_init(combinations);
 
     {
-
-        for(uint32_t count : symbol_counts){
-            total_number_of_symbols += count;
-            ASSERT(total_number_of_symbols >= count); // overflow
-        }
 
         // formula for calculating all possible combinations is:
         // n! / (a! * b! * c! * ...)
@@ -154,7 +158,7 @@ int main(int argc, char * * argv){
 
     }
 
-    cout << "compressing..." << endl;
+    cout << "encoding..." << endl;
 
     {
 
@@ -209,7 +213,7 @@ int main(int argc, char * * argv){
 
         // TODO test and see if we are to add all scaled symbols, are we going to get `combinations`
 
-        cout << "reading encoded data..." << endl;
+        cout << "writing encoded data..." << endl;
 
         {
             FILE* file_out = fopen(file_compressed_str.c_str(), "wb");
