@@ -24,7 +24,7 @@ HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 # FILE=pmv-163840 # 160k, encode 0m 1,922s, decode 0m 5,872s
 # FILE=pmv-327680 # 320k, encode 0m11,963s, decode 1m17,613s
 
-### <current> (decoder now detects if symbol count is 0, and skips calculations if so)
+### 95f60eb2efdbe1904e590c20ce7cd53a76d0b935 (decoder now detects if symbol count is 0, and skips calculations if so)
 
 # FILE=urandom-40960
 # FILE=pmv-10240  #  10k, decode 0m0,170s
