@@ -358,7 +358,7 @@ void decode(const string & file_compressed, const string & file_regenerated){
 
                 uint32_t symbol_count = symbol_counts.at(symbol_s);
 
-                // TODO we could also try and use a vector for this instead (make another vector like `symbol_count`, and make it contain only the elements that are > 0)
+                // using a vector with the remaining unique symbols, rather than having this if here actually makes the process (a tiny bit) slower
                 if(symbol_count <= 0){
                     continue;
                 }
