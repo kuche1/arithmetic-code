@@ -354,6 +354,7 @@ void decode(const string & file_compressed, const string & file_regenerated){
 
             bool symbol_found = false;
 
+            // TODO we could make `symbol_counts` into a vector, so that we don't have to iterate trough the worthless symbols
             for(size_t symbol_s = 0; symbol_s < symbol_counts.size(); ++symbol_s){
 
                 uint32_t symbol_count = symbol_counts.at(symbol_s);
