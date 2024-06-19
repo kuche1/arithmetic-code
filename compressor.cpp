@@ -237,13 +237,13 @@ void encode(const string & file_to_compress, const string & file_compressed){
             mpz_t symbol_bot_scaled;
             mpz_init_set(symbol_bot_scaled, remaining_combinations);
             mpz_mul_ui(symbol_bot_scaled, symbol_bot_scaled, symbol_bot);
-            mpz_div_ui(symbol_bot_scaled, symbol_bot_scaled, remaining_symbols); // TODO hopefully this leaves no remainder
+            mpz_div_ui(symbol_bot_scaled, symbol_bot_scaled, remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
 
             // symbol_count_scaled = remaining_combinations * symbol_count / remaining_symbols
             mpz_t symbol_count_scaled;
             mpz_init_set(symbol_count_scaled, remaining_combinations);
             mpz_mul_ui(symbol_count_scaled, symbol_count_scaled, symbol_count);
-            mpz_div_ui(symbol_count_scaled, symbol_count_scaled, remaining_symbols); // TODO hopefully this leaves no remainder
+            mpz_div_ui(symbol_count_scaled, symbol_count_scaled, remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
 
             mpz_add(bot, bot, symbol_bot_scaled);
             mpz_add(top, bot, symbol_count_scaled);
@@ -352,13 +352,13 @@ void decode(const string & file_compressed, const string & file_regenerated){
                 mpz_t symbol_bot_scaled;
                 mpz_init_set(symbol_bot_scaled, remaining_combinations);
                 mpz_mul_ui(symbol_bot_scaled, symbol_bot_scaled, symbol_bot);
-                mpz_div_ui(symbol_bot_scaled, symbol_bot_scaled, remaining_symbols); // TODO hopefully this leaves no remainder
+                mpz_div_ui(symbol_bot_scaled, symbol_bot_scaled, remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
 
                 // symbol_count_scaled = remaining_combinations * symbol_count / remaining_symbols
                 mpz_t symbol_count_scaled;
                 mpz_init_set(symbol_count_scaled, remaining_combinations);
                 mpz_mul_ui(symbol_count_scaled, symbol_count_scaled, symbol_count);
-                mpz_div_ui(symbol_count_scaled, symbol_count_scaled, remaining_symbols); // TODO hopefully this leaves no remainder
+                mpz_div_ui(symbol_count_scaled, symbol_count_scaled, remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
 
                 mpz_t new_bot;
                 mpz_init(new_bot);
