@@ -80,6 +80,25 @@ int main(int argc, char * * argv){
 
     }
 
+    cout << "calculating ranges..." << endl;
+    // TODO we could incorporate this calculation in the calc-count part
+
+    array<uint32_t, 256> symbol_bots = {};
+
+    {
+        uint32_t base = 0;
+
+        for(size_t symbol_idx = 0; symbol_idx < symbol_counts.size(); ++symbol_idx){
+            uint32_t symbol_count = symbol_counts.at(symbol_idx);
+
+            uint32_t bot = base;
+
+            base = base + symbol_count;
+
+            symbol_bots.at(symbol_idx) = bot;
+        }
+    }
+
     cout << "calculating combinations..." << endl;
 
     uint32_t total_number_of_symbols = 0;
@@ -136,26 +155,6 @@ int main(int argc, char * * argv){
 
     }
 
-    cout << "calculating ranges..." << endl;
-    // TODO we could incorporate this calculation in the calc-count part
-
-    array<pair<uint32_t, uint32_t>, 256> symbol_ranges = {};
-
-    {
-        uint32_t base = 0;
-
-        for(size_t symbol_idx = 0; symbol_idx < symbol_counts.size(); ++symbol_idx){
-            uint32_t symbol_count = symbol_counts.at(symbol_idx);
-
-            uint32_t bot = base;
-            uint32_t top = base + symbol_count;
-
-            base = top;
-
-            symbol_ranges.at(symbol_idx) = {bot, top};
-        }
-    }
-
     cout << "compressing..." << endl;
 
     {
@@ -186,7 +185,7 @@ int main(int argc, char * * argv){
             mpz_sub(remaining_combinations, remaining_combinations, bot);
 
             uint32_t symbol_count = symbol_counts.at(symbol);
-            auto [symbol_bot, symbol_top] = symbol_ranges.at(symbol);
+            uint32_t symbol_bot = symbol_bots.at(symbol);
 
             // symbol_bot_scaled = remaining_combinations * symbol_bot / total_number_of_symbols
             mpz_t symbol_bot_scaled;
@@ -266,7 +265,7 @@ int main(int argc, char * * argv){
                 for(size_t symbol_s = 0; symbol_s < symbol_counts.size(); ++symbol_s){
 
                     uint32_t symbol_count = symbol_counts.at(symbol_s);
-                    auto [symbol_bot, symbol_top] = symbol_ranges.at(symbol_s);
+                    uint32_t symbol_bot = symbol_bots.at(symbol_s);
 
                     // symbol_bot_scaled = remaining_combinations * symbol_bot / total_number_of_symbols
                     mpz_t symbol_bot_scaled;
