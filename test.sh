@@ -29,17 +29,17 @@ HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 # FILE=pmv-20480  #  20k, decode 0m 0,321s
 # FILE=pmv-40960  #  40k, decode 0m 0,712s
 # FILE=pmv-81920  #  80k, decode 0m 1,768s
-# FILE=pmv-163840 # 160k, decode 0m 5,195s
+  FILE=pmv-163840 # 160k, decode 0m 5,195s
 # FILE=pmv-327680 # 320k, decode 1m18,695s
 
-### not commited since results are slower across the board (decoder now uses a vector to track the remaining symbols, rather than checking the count on every iteration)
+### not commited since results are slower across the board (altho this might have been a random fluctuation) (decoder now uses a vector to track the remaining symbols, rather than checking the count on every iteration)
 
 # FILE=urandom-40960
 # FILE=pmv-10240  #  10k, decode 0m 0,181s
 # FILE=pmv-20480  #  20k, decode 0m 0,343s
 # FILE=pmv-40960  #  40k, decode 0m 0,743s
 # FILE=pmv-81920  #  80k, decode 0m 1,821s
-  FILE=pmv-163840 # 160k, decode 0m 5,298s
+# FILE=pmv-163840 # 160k, decode 0m 5,298s
 # FILE=pmv-327680 # 320k, decode 1m19,346s
 
 clear

@@ -123,10 +123,10 @@ void calculate_possible_combinations(mpz_t & combinations, const SYMBOL_COUNTS_T
 
 }
 
-void update_probabilities_based_on_used_up_symbol(unsigned char symbol, uint32_t & remaining_symbols, SYMBOL_COUNTS_TYPE & symbol_counts, SYMBOL_BOTS_TYPE & symbol_bots){
+void update_probabilities_based_on_used_up_symbol(unsigned char symbol, uint32_t & number_of_remaining_symbols, SYMBOL_COUNTS_TYPE & symbol_counts, SYMBOL_BOTS_TYPE & symbol_bots){
 
-    ASSERT(remaining_symbols > 0); // unreachable
-    remaining_symbols -= 1;
+    ASSERT(number_of_remaining_symbols > 0); // unreachable
+    number_of_remaining_symbols -= 1;
 
     ASSERT(symbol_counts.at(symbol) > 0); // unreachable
     symbol_counts.at(symbol) -= 1;
@@ -216,7 +216,7 @@ void encode(const string & file_to_compress, const string & file_compressed){
 
     {
 
-        uint32_t remaining_symbols = total_number_of_symbols;
+        uint32_t number_of_remaining_symbols = total_number_of_symbols;
 
         ifstream file_in;
         file_in.open(file_to_compress, ios::binary);
@@ -244,17 +244,17 @@ void encode(const string & file_to_compress, const string & file_compressed){
             uint32_t symbol_count = symbol_counts.at(symbol);
             uint32_t symbol_bot = symbol_bots.at(symbol);
 
-            // symbol_bot_scaled = remaining_combinations * symbol_bot / remaining_symbols
+            // symbol_bot_scaled = remaining_combinations * symbol_bot / number_of_remaining_symbols
             mpz_t symbol_bot_scaled;
             mpz_init_set(symbol_bot_scaled, remaining_combinations);
             mpz_mul_ui(symbol_bot_scaled, symbol_bot_scaled, symbol_bot);
-            mpz_div_ui(symbol_bot_scaled, symbol_bot_scaled, remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
+            mpz_div_ui(symbol_bot_scaled, symbol_bot_scaled, number_of_remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
 
-            // symbol_count_scaled = remaining_combinations * symbol_count / remaining_symbols
+            // symbol_count_scaled = remaining_combinations * symbol_count / number_of_remaining_symbols
             mpz_t symbol_count_scaled;
             mpz_init_set(symbol_count_scaled, remaining_combinations);
             mpz_mul_ui(symbol_count_scaled, symbol_count_scaled, symbol_count);
-            mpz_div_ui(symbol_count_scaled, symbol_count_scaled, remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
+            mpz_div_ui(symbol_count_scaled, symbol_count_scaled, number_of_remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
 
             mpz_add(bot, bot, symbol_bot_scaled);
             mpz_add(top, bot, symbol_count_scaled);
@@ -263,7 +263,7 @@ void encode(const string & file_to_compress, const string & file_compressed){
             mpz_clear(symbol_bot_scaled);
             mpz_clear(symbol_count_scaled);
 
-            update_probabilities_based_on_used_up_symbol(symbol, remaining_symbols, symbol_counts, symbol_bots);
+            update_probabilities_based_on_used_up_symbol(symbol, number_of_remaining_symbols, symbol_counts, symbol_bots);
 
         }
 
@@ -333,7 +333,7 @@ void decode(const string & file_compressed, const string & file_regenerated){
 
     {
 
-        uint32_t remaining_symbols = total_number_of_symbols;
+        uint32_t number_of_remaining_symbols = total_number_of_symbols;
 
         ofstream file_out;
         file_out.open(file_regenerated, ios::binary);
@@ -365,17 +365,17 @@ void decode(const string & file_compressed, const string & file_regenerated){
 
                 uint32_t symbol_bot = symbol_bots.at(symbol_s);
 
-                // symbol_bot_scaled = remaining_combinations * symbol_bot / remaining_symbols
+                // symbol_bot_scaled = remaining_combinations * symbol_bot / number_of_remaining_symbols
                 mpz_t symbol_bot_scaled;
                 mpz_init_set(symbol_bot_scaled, remaining_combinations);
                 mpz_mul_ui(symbol_bot_scaled, symbol_bot_scaled, symbol_bot);
-                mpz_div_ui(symbol_bot_scaled, symbol_bot_scaled, remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
+                mpz_div_ui(symbol_bot_scaled, symbol_bot_scaled, number_of_remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
 
-                // symbol_count_scaled = remaining_combinations * symbol_count / remaining_symbols
+                // symbol_count_scaled = remaining_combinations * symbol_count / number_of_remaining_symbols
                 mpz_t symbol_count_scaled;
                 mpz_init_set(symbol_count_scaled, remaining_combinations);
                 mpz_mul_ui(symbol_count_scaled, symbol_count_scaled, symbol_count);
-                mpz_div_ui(symbol_count_scaled, symbol_count_scaled, remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
+                mpz_div_ui(symbol_count_scaled, symbol_count_scaled, number_of_remaining_symbols); // TODO this shouldn't leave a remainder, be we can add an assert to be sure
 
                 mpz_t new_bot;
                 mpz_init(new_bot);
@@ -398,7 +398,7 @@ void decode(const string & file_compressed, const string & file_regenerated){
                     mpz_set(bot, new_bot);
                     mpz_set(top, new_top);
 
-                    update_probabilities_based_on_used_up_symbol(symbol_uc, remaining_symbols, symbol_counts, symbol_bots);
+                    update_probabilities_based_on_used_up_symbol(symbol_uc, number_of_remaining_symbols, symbol_counts, symbol_bots);
                 }
 
                 mpz_clear(new_bot);
