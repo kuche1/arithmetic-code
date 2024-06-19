@@ -17,14 +17,18 @@ using namespace std;
     exit(1); \
 }
 
-#define UNREACHABLE() { \
-    ERR("Unreachable code reached") \
-}
-
 #define ASSERT(condition) { \
     if(!(condition)){ \
         ERR("Assertion failed"); \
     } \
+}
+
+// used when the end user did something wrong
+#define USER_ERR(...) { \
+    cerr << "ERROR: "; \
+    cerr << __VA_ARGS__; \
+    cerr << endl; \
+    exit(1); \
 }
 
 #define SYMBOL_COUNTS_TYPE array<uint32_t, 256>
@@ -153,7 +157,9 @@ void encode(const string & file_to_compress, const string & file_compressed){
 
         ifstream file_in;
         file_in.open(file_to_compress, ios::binary);
-        ASSERT(file_in.is_open());
+        if(!file_in.is_open()){
+            USER_ERR("Could not open file `" << file_to_compress << "`");
+        }
 
         while(true){
 

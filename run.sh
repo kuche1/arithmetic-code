@@ -5,9 +5,12 @@ set -euo pipefail
 HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 
 # FILE=urandom-40960
-# FILE=pmv-40960
-# FILE=pmv-81920
-FILE=pmv-163840 # even at this size (80k) the compression is super fast (the decompression is a bit slower, but still acceptable)
+# FILE=pmv-10240  #  10k, comp+dec 0m0,236s,  comp ratio 0.3904296875
+# FILE=pmv-20480  #  20k, comp+dec 0m0,458s,  comp ratio 0.285888671875
+  FILE=pmv-40960  #  40k, comp+dec 0m1,009s,  comp ratio 0.227294921875
+# FILE=pmv-81920  #  80k, comp+dec 0m2,601s,  comp ratio 0.1971923828125
+# FILE=pmv-163840 # 160k, comp+dec 0m7,663s,  comp ratio 0.1824951171875
+# FILE=pmv-327680 # 320k, comp+dec 1m28,304s, comp ratio 0.25567626953125
 
 clear
 
