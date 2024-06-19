@@ -4,6 +4,7 @@
 #include <cassert>
 #include <climits>
 #include <gmp.h>
+#include <arpa/inet.h>
 
 using namespace std;
 
@@ -80,6 +81,19 @@ int main(int argc, char * * argv){
 
     }
 
+    cout << "writing symbol counts..." << endl;
+
+    {
+        ofstream file_out;
+        file_out.open(file_compressed_str, ios::binary);
+        ASSERT(file_out.is_open());
+
+        for(uint32_t count : symbol_counts){
+            uint32_t big_endian = htonl(count);
+            file_out.write(reinterpret_cast<char *>(&big_endian), sizeof(big_endian));
+        }
+    }
+
     cout << "calculating ranges..." << endl;
 
     array<uint32_t, 256> symbol_bots = {};
@@ -98,7 +112,7 @@ int main(int argc, char * * argv){
         }
     }
 
-    cout << "calculating total number of symbols..." << endl;
+    cout << "calculating number of symbols..." << endl;
 
     uint32_t total_number_of_symbols = 0;
 
@@ -216,7 +230,7 @@ int main(int argc, char * * argv){
         cout << "writing encoded data..." << endl;
 
         {
-            FILE* file_out = fopen(file_compressed_str.c_str(), "wb");
+            FILE* file_out = fopen(file_compressed_str.c_str(), "ab");
             ASSERT(file_out);
 
             mpz_out_raw(file_out, bot);
@@ -229,19 +243,35 @@ int main(int argc, char * * argv){
     cout << "decoding..." << endl;
 
     {
-        mpz_t num;
-        mpz_init(num);
+        cout << "opening compressed file..." << endl;
+
+        FILE * file_compressed = fopen(file_compressed_str.c_str(), "rb");
+        ASSERT(file_compressed);
+
+        cout << "reading symbol counts..." << endl;
+
+        {
+            for(uint32_t & count : symbol_counts){
+
+                uint32_t big_endian;
+                ASSERT( fread(&big_endian, sizeof(big_endian), 1, file_compressed) == 1 );
+
+                count = ntohl(big_endian);
+            }
+        }
 
         cout << "reading encoded data..." << endl;
 
+        mpz_t num;
+        mpz_init(num);
+
         {
-            FILE* file_in = fopen(file_compressed_str.c_str(), "rb");
-            ASSERT(file_in);
-
-            mpz_inp_raw(num, file_in);
-
-            fclose(file_in);
+            mpz_inp_raw(num, file_compressed);
         }
+
+        cout << "closing compressed file..." << endl;
+
+        fclose(file_compressed);
 
         cout << "decoding..." << endl;
 
