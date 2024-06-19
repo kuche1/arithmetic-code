@@ -458,8 +458,9 @@ int main(int argc, char * * argv){
     }else{
 
         USER_ERR(
-            "Invalid action `" << action << "`" << endl <<
-            "Only valid actions are `" << ACTION_ENCODE << "` and `" << ACTION_DECODE << "`"
+            endl <<
+            "    Invalid action `" << action << "`" << endl <<
+            "    Only valid actions are `" << ACTION_ENCODE << "` and `" << ACTION_DECODE << "`"
         );
 
     }
