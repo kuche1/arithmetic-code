@@ -479,7 +479,7 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
 
 }
 
-#define ENCODER_BLOCK_SIZE 81920 // in bytes
+#define ENCODER_BLOCK_SIZE 40960 // in bytes
 #define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
 
 void encode_multithreaded(const string & file_to_compress, const string & file_compressed){
@@ -594,7 +594,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
             }
         }
 
-        float progress_as_percent = static_cast<float>(finished_threads) * 100 / static_cast<float>(total_threads);
+        float progress_as_percent = static_cast<float>(finished_threads) * 100.0f / static_cast<float>(total_threads);
 
         cout << "progress: " << progress_as_percent << "% (" << finished_threads << " / " << total_threads << ")" << endl;
 
@@ -602,7 +602,16 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
             break;
         }
 
-        this_thread::sleep_for(chrono::milliseconds(1'000));
+        // sleep
+
+        static int sleep = 100;
+
+        this_thread::sleep_for(chrono::milliseconds(sleep));
+
+        sleep = (sleep * 11) / 10;
+        if(sleep > 4'000){
+            sleep = 4'000;
+        }
 
     }
 

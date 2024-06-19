@@ -43,13 +43,17 @@ HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 
 ### 384670361e86e7c68e2b411969841ce465a40e01 multithreading finished, blocksize is 81920
 
-# FILE=pmv-10240  #  10k, encode 0m0,021s, decode 0m 0,171s
-# FILE=pmv-20480  #  20k, encode 0m0,053s, decode 0m 0,321s
-# FILE=pmv-40960  #  40k, encode 0m0,153s, decode 0m 0,700s
-# FILE=pmv-81920  #  80k, encode 0m0,517s, decode 0m 1,749s
-  FILE=pmv-163840 # 160k, encode 0m0,523s, decode 0m 1,844s
-# FILE=pmv-327680 # 320k, encode 0m0,975s, decode 0m17,167s
-# FILE=pmv-655360 # 640k, encode 0m3,076s, decode 3m43,480s
+# FILE=pmv-10240  #  10k; encode 0m0,021s; decode 0m 0,171s
+# FILE=pmv-20480  #  20k; encode 0m0,053s; decode 0m 0,321s
+# FILE=pmv-40960  #  40k; encode 0m0,153s; decode 0m 0,700s
+# FILE=pmv-81920  #  80k; encode 0m0,517s; decode 0m 1,749s
+# FILE=pmv-163840 # 160k; encode 0m0,523s; decode 0m 1,844s
+# FILE=pmv-327680 # 320k; encode 0m0,975s; decode 0m17,167s
+# FILE=pmv-655360 # 640k; encode 0m3,076s; decode 3m43,480s; compression ratio 0.48369903564453126
+
+### <current> reduced blocksize to 40960
+
+FILE=pmv-655360 # 640k; encode 0m1,217s; decode 1m27,058s; compression ratio 0.4791107177734375
 
 clear
 
