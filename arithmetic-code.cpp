@@ -459,7 +459,7 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, mpz_t num, const string & fi
 
 }
 
-#define BLOCK_SIZE 81920
+#define ENCODER_BLOCK_SIZE 81920
 #define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
 
 void encode_multithreaded(const string & file_to_compress, const string & file_compressed){
@@ -476,12 +476,12 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
 
         string tmp_file = TMP_FILE_PREFIX + to_string(iter);
 
-        // encode_block(file_to_compress, start, BLOCK_SIZE, tmp_file);
-        threads.push_back( thread(encode_block, file_to_compress, start, BLOCK_SIZE, tmp_file) );
+        // encode_block(file_to_compress, start, ENCODER_BLOCK_SIZE, tmp_file);
+        threads.push_back( thread(encode_block, file_to_compress, start, ENCODER_BLOCK_SIZE, tmp_file) );
 
         blocks.push_back(tmp_file);
 
-        start += BLOCK_SIZE;
+        start += ENCODER_BLOCK_SIZE;
 
         iter += 1;
 
