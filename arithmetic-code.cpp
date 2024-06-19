@@ -5,6 +5,8 @@
 #include <climits>
 #include <gmp.h>
 #include <arpa/inet.h>
+#include <vector>
+#include <cstdio>
 
 using namespace std;
 
@@ -36,6 +38,10 @@ using namespace std;
     exit(1); \
 }
 
+#define USER_ERR_CANT_OPEN_FILE(path) { \
+    USER_ERR("Could not open file `" << path << "`"); \
+}
+
 #define SYMBOL_COUNTS_TYPE array<uint32_t, 256>
 // we need 1 count for each byte -> 2**8 -> length needs to be 256
 // with uint32_t we can count 2**32 -> 4294967296 times each character, so if a file consist all of the same character, the can process at max a  4GiB (4294967296 / 1024 / 1024 / 1024) file
@@ -62,6 +68,54 @@ SYMBOL_BOTS_TYPE calculate_symbol_bots(const SYMBOL_COUNTS_TYPE & symbol_counts)
     }
 
     return symbol_bots;
+
+}
+
+void combine_files_and_delete(const string & sum, const vector<string> & blocks){
+
+    ofstream file_out;
+    file_out.open(sum, ios::binary);
+    ASSERT(file_out.is_open());
+
+    for(const string & block : blocks){
+
+        {
+
+            ifstream file_in;
+            file_in.open(block, ios::binary);
+            ASSERT(file_in.is_open());
+
+            char buffer[1]; // TODO da go eba tova laino, ako sloja ne6to pove4e ot 1 qvno endianness-a se naebava
+
+            while(true){
+
+                file_in.read(buffer, sizeof(buffer));
+
+                size_t bytes_read = file_in.gcount();
+
+                if(bytes_read <= 0){
+                    break;
+                }
+
+                file_out.write(buffer, sizeof(buffer));
+
+            }
+
+        }
+
+        ASSERT(remove(block.c_str()) == 0);
+
+    }
+
+}
+
+size_t get_file_size(const string & file){
+
+    ifstream file_in;
+    file_in.open(file, ios::binary | ios::ate);
+    ASSERT(file_in.is_open());
+
+    return file_in.tellg();
 
 }
 
@@ -153,7 +207,7 @@ void update_probabilities_based_on_used_up_symbol(unsigned char symbol, uint32_t
 
 }
 
-void encode(const string & file_to_compress, const string & file_compressed){
+void encode_block(const string & file_to_compress, size_t start_pos, size_t block_size, const string & file_compressed){
 
     cout << "counting symbols..." << endl;
 
@@ -163,11 +217,11 @@ void encode(const string & file_to_compress, const string & file_compressed){
 
         ifstream file_in;
         file_in.open(file_to_compress, ios::binary);
-        if(!file_in.is_open()){
-            USER_ERR("Could not open file `" << file_to_compress << "`");
-        }
+        ASSERT(file_in.is_open());
 
-        while(true){
+        file_in.seekg(start_pos, ios::beg);
+
+        for(size_t char_idx = 0; char_idx < block_size; ++char_idx){
 
             unsigned char symbol;
             file_in.read(reinterpret_cast<char*>(&symbol), 1);
@@ -223,12 +277,14 @@ void encode(const string & file_to_compress, const string & file_compressed){
         file_in.open(file_to_compress, ios::binary);
         ASSERT(file_in.is_open());
 
+        file_in.seekg(start_pos, ios::beg);
+
         mpz_t top;
         mpz_init_set(top, combinations);
 
         mpz_clear(combinations);
 
-        while(true){
+        for(size_t char_idx = 0; char_idx < block_size; ++char_idx){
 
             unsigned char symbol;
             file_in.read(reinterpret_cast<char*>(&symbol), 1);
@@ -285,26 +341,7 @@ void encode(const string & file_to_compress, const string & file_compressed){
 
 }
 
-void decode(const string & file_compressed, const string & file_regenerated){
-
-    cout << "opening compressed file..." << endl;
-
-    FILE * file_in = fopen(file_compressed.c_str(), "rb");
-    ASSERT(file_in);
-
-    cout << "reading symbol counts..." << endl;
-
-    SYMBOL_COUNTS_TYPE symbol_counts = {};
-
-    {
-        for(uint32_t & count : symbol_counts){
-
-            uint32_t big_endian;
-            ASSERT( fread(&big_endian, sizeof(big_endian), 1, file_in) == 1 );
-
-            count = ntohl(big_endian);
-        }
-    }
+void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, mpz_t num, const string & file_regenerated){
 
     cout << "calculating symbol ranges..." << endl;
 
@@ -319,16 +356,6 @@ void decode(const string & file_compressed, const string & file_regenerated){
     mpz_t combinations;
     mpz_init(combinations);
     calculate_possible_combinations(combinations, symbol_counts, total_number_of_symbols);
-
-    cout << "reading encoded data..." << endl;
-
-    mpz_t num;
-    mpz_init(num);
-    mpz_inp_raw(num, file_in);
-
-    cout << "closing compressed file..." << endl;
-
-    fclose(file_in);
 
     cout << "decoding..." << endl;
 
@@ -427,6 +454,96 @@ void decode(const string & file_compressed, const string & file_regenerated){
 
     mpz_clear(combinations);
 
+    mpz_clear(num);
+
+}
+
+#define BLOCK_SIZE 81920
+#define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program
+
+void encode_multithreaded(const string & file_to_compress, const string & file_compressed){
+
+    size_t file_size = get_file_size(file_to_compress);
+
+    vector<string> blocks = {};
+
+    size_t start = 0z;
+    size_t iter = 0;
+
+    while(start < file_size){
+
+        string tmp_file = TMP_FILE_PREFIX + to_string(iter);
+
+        encode_block(file_to_compress, start, BLOCK_SIZE, tmp_file);
+
+        blocks.push_back(tmp_file);
+
+        start += BLOCK_SIZE;
+
+        iter += 1;
+
+    }
+
+    combine_files_and_delete(file_compressed, blocks);
+
+}
+
+void decode_multithreaded(const string & file_compressed, const string & file_regenerated){
+
+    size_t file_size = get_file_size(file_compressed);
+
+    FILE * file_in = fopen(file_compressed.c_str(), "rb");
+    if(!file_in){
+        USER_ERR_CANT_OPEN_FILE(file_compressed);
+    }
+
+    vector<string> blocks = {};
+
+    for(size_t iter = 0;; ++iter){
+
+        {
+            long cur = ftell(file_in);
+            ASSERT(cur >= 0);
+
+            size_t cur_s = static_cast<size_t>(cur);
+
+            if(cur_s >= file_size){
+                break;
+            }
+        }
+
+        // read header
+
+        SYMBOL_COUNTS_TYPE symbol_counts = {};
+
+        for(uint32_t & count : symbol_counts){
+
+            uint32_t big_endian;
+            ASSERT( fread(&big_endian, sizeof(big_endian), 1, file_in) == 1 );
+
+            count = ntohl(big_endian);
+        }
+
+        // read data
+
+        // actual data is stored on heap
+        // we can mpz_clear in another thread
+        mpz_t num;
+        mpz_init(num);
+        ASSERT( mpz_inp_raw(num, file_in) != 0);
+
+        // process block
+
+        string tmp_file = TMP_FILE_PREFIX + to_string(iter);
+
+        decode_block(symbol_counts, num, tmp_file);
+
+        blocks.push_back(tmp_file);
+
+    }
+
+    combine_files_and_delete(file_regenerated, blocks);
+
 }
 
 int main(int argc, char * * argv){
@@ -450,11 +567,11 @@ int main(int argc, char * * argv){
 
     if(action == ACTION_ENCODE){
 
-        encode(file_in, file_out);
+        encode_multithreaded(file_in, file_out);
 
     }else if(action == ACTION_DECODE){
 
-        decode(file_in, file_out);
+        decode_multithreaded(file_in, file_out);
 
     }else{
 
