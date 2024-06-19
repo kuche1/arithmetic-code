@@ -492,6 +492,9 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
     size_t start = 0z;
     size_t iter = 0;
 
+    cout << "starting threads..." << endl;
+    // TODO we could actually crash when starting the threads if they are too many (would be caused by big files)
+
     while(start < file_size){
 
         string tmp_file = TMP_FILE_PREFIX + to_string(iter);
@@ -507,9 +510,13 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
 
     }
 
+    cout << "waiting for all threads to finish..." << endl;
+
     for(thread & thr : threads){
         thr.join();
     }
+
+    cout << "assembling file..." << endl;
 
     combine_files_and_delete(file_compressed, blocks);
 
@@ -527,6 +534,8 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
     vector<string> blocks = {};
     vector<thread> threads = {};
     vector<atomic<bool> *> threads_finished = {};
+
+    cout << "starting threads..." << endl;
 
     for(size_t iter = 0;; ++iter){
 
@@ -581,6 +590,8 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
     }
 
+    cout << "all threads started" << endl;
+
     fclose(file_in);
 
     while(true){
@@ -604,14 +615,14 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
         // sleep
 
-        static int sleep = 100;
+        // static int sleep = 100;
 
-        this_thread::sleep_for(chrono::milliseconds(sleep));
+        this_thread::sleep_for(chrono::milliseconds(1'000));
 
-        sleep = (sleep * 11) / 10;
-        if(sleep > 4'000){
-            sleep = 4'000;
-        }
+        // sleep = (sleep * 105) / 100;
+        // if(sleep > 4'000){
+        //     sleep = 4'000;
+        // }
 
     }
 
