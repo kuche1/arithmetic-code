@@ -29,18 +29,27 @@ HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 # FILE=pmv-20480  #  20k, decode 0m 0,321s
 # FILE=pmv-40960  #  40k, decode 0m 0,712s
 # FILE=pmv-81920  #  80k, decode 0m 1,768s
-  FILE=pmv-163840 # 160k, decode 0m 5,195s
+# FILE=pmv-163840 # 160k, decode 0m 5,195s
 # FILE=pmv-327680 # 320k, decode 1m18,695s
 
 ### not commited since results are slower across the board (altho this might have been a random fluctuation) (decoder now uses a vector to track the remaining symbols, rather than checking the count on every iteration)
 
-# FILE=urandom-40960
 # FILE=pmv-10240  #  10k, decode 0m 0,181s
 # FILE=pmv-20480  #  20k, decode 0m 0,343s
 # FILE=pmv-40960  #  40k, decode 0m 0,743s
 # FILE=pmv-81920  #  80k, decode 0m 1,821s
 # FILE=pmv-163840 # 160k, decode 0m 5,298s
 # FILE=pmv-327680 # 320k, decode 1m19,346s
+
+### 384670361e86e7c68e2b411969841ce465a40e01 multithreading finished, blocksize is 81920
+
+# FILE=pmv-10240  #  10k, encode 0m0,021s, decode 0m 0,171s
+# FILE=pmv-20480  #  20k, encode 0m0,053s, decode 0m 0,321s
+# FILE=pmv-40960  #  40k, encode 0m0,153s, decode 0m 0,700s
+# FILE=pmv-81920  #  80k, encode 0m0,517s, decode 0m 1,749s
+  FILE=pmv-163840 # 160k, encode 0m0,523s, decode 0m 1,844s
+# FILE=pmv-327680 # 320k, encode 0m0,975s, decode 0m17,167s
+# FILE=pmv-655360 # 640k, encode 0m3,076s, decode 3m43,480s
 
 clear
 
