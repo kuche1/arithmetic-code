@@ -229,7 +229,7 @@ void update_probabilities_based_on_used_up_symbol(unsigned char symbol, uint32_t
 
 void encode_block(const string & file_to_compress, size_t start_pos, size_t block_size, const string & file_compressed){
 
-    cout << "counting symbols..." << endl;
+    // cout << "counting symbols..." << endl;
 
     SYMBOL_COUNTS_TYPE symbol_counts = {};
 
@@ -256,7 +256,7 @@ void encode_block(const string & file_to_compress, size_t start_pos, size_t bloc
 
     }
 
-    cout << "writing symbol counts..." << endl;
+    // cout << "writing symbol counts..." << endl;
 
     {
         ofstream file_out;
@@ -269,21 +269,21 @@ void encode_block(const string & file_to_compress, size_t start_pos, size_t bloc
         }
     }
 
-    cout << "calculating ranges..." << endl;
+    // cout << "calculating ranges..." << endl;
 
     SYMBOL_BOTS_TYPE symbol_bots = calculate_symbol_bots(symbol_counts);
 
-    cout << "calculating number of symbols..." << endl;
+    // cout << "calculating number of symbols..." << endl;
 
     uint32_t total_number_of_symbols = calculate_total_number_of_symbols(symbol_counts);
 
-    cout << "calculating possible combinations..." << endl;
+    // cout << "calculating possible combinations..." << endl;
 
     mpz_t combinations;
     mpz_init(combinations);
     calculate_possible_combinations(combinations, symbol_counts, total_number_of_symbols);
 
-    cout << "encoding..." << endl;
+    // cout << "encoding..." << endl;
 
     mpz_t bot;
     mpz_init(bot);
@@ -348,7 +348,7 @@ void encode_block(const string & file_to_compress, size_t start_pos, size_t bloc
 
     }
 
-    cout << "writing encoded data..." << endl;
+    // cout << "writing encoded data..." << endl;
 
     {
         FILE* file_out = fopen(file_compressed.c_str(), "ab");
@@ -366,21 +366,21 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
     // cout << "DBG: num: ";
     // gmp_printf("%Zd\n", num->get());
 
-    cout << "calculating symbol ranges..." << endl;
+    // cout << "calculating symbol ranges..." << endl;
 
     SYMBOL_BOTS_TYPE symbol_bots = calculate_symbol_bots(symbol_counts);
 
-    cout << "calculating number of symbols..." << endl;
+    // cout << "calculating number of symbols..." << endl;
 
     uint32_t total_number_of_symbols = calculate_total_number_of_symbols(symbol_counts);
 
-    cout << "calculating possible combinations..." << endl;
+    // cout << "calculating possible combinations..." << endl;
 
     mpz_t combinations;
     mpz_init(combinations);
     calculate_possible_combinations(combinations, symbol_counts, total_number_of_symbols);
 
-    cout << "decoding..." << endl;
+    // cout << "decoding..." << endl;
 
     {
 
@@ -526,6 +526,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
     vector<string> blocks = {};
     vector<thread> threads = {};
+    vector<atomic<bool> *> threads_finished = {};
 
     for(size_t iter = 0;; ++iter){
 
@@ -562,17 +563,52 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
         // process block
 
+        atomic<bool> * thread_done = new atomic<bool>(false);
+        threads_finished.push_back(thread_done);
+
         string tmp_file = TMP_FILE_PREFIX + to_string(iter);
 
-        // decode_block(symbol_counts, num, tmp_file);
-        // threads.push_back( thread(decode_block, symbol_counts, num, tmp_file) ); // TODO if I use this the decoding fails
-        threads.push_back( thread(decode_block, symbol_counts, num, tmp_file) ); // TODO if I use this the decoding fails
+        threads.push_back(
+            thread(
+                [symbol_counts, num, tmp_file, thread_done](){
+                    decode_block(symbol_counts, num, tmp_file);
+                    thread_done->store(true);
+                }
+            )
+        );
 
         blocks.push_back(tmp_file);
 
     }
 
     fclose(file_in);
+
+    while(true){
+
+        size_t total_threads = threads.size();
+        size_t finished_threads = 0;
+
+        for(atomic<bool> * finished : threads_finished){
+            if(finished->load()){
+                finished_threads += 1;
+            }
+        }
+
+        float progress_as_percent = static_cast<float>(finished_threads) * 100 / static_cast<float>(total_threads);
+
+        cout << "progress: " << progress_as_percent << "% (" << finished_threads << " / " << total_threads << ")" << endl;
+
+        if(finished_threads == total_threads){
+            break;
+        }
+
+        this_thread::sleep_for(chrono::milliseconds(1'000));
+
+    }
+
+    for(atomic<bool> * finished : threads_finished){
+        delete finished;
+    }
 
     for(thread & thr : threads){
         thr.join();
