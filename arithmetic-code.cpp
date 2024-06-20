@@ -482,7 +482,7 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
 
 #define ENCODER_BLOCK_SIZE 20480 // in bytes
 #define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
-#define MAX_THREADS 6
+#define MAX_THREADS 8
 
 void encode_multithreaded(const string & file_to_compress, const string & file_compressed){
 
@@ -522,6 +522,7 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
 
     combine_files_and_delete(file_compressed, blocks);
 
+    cout << "done" << endl;
 }
 
 void decode_multithreaded(const string & file_compressed, const string & file_regenerated){
@@ -542,6 +543,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
         // check if EOF reached
 
+        bool EOF_reached = false;
         long bytes_read = {};
 
         {
@@ -551,17 +553,46 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
             size_t bytes_read_s = static_cast<size_t>(bytes_read);
 
             if(bytes_read_s >= file_size){
-                break;
+                EOF_reached = true;
             }
 
         }
 
-        // block until a thread is available
+        // block until a thread is available or break if all done
 
         while(true){
 
-            if(threads.size() < MAX_THREADS){
-                break;
+            bool waiting_for_last_threads_to_finish = false;
+
+            if(EOF_reached){
+
+                waiting_for_last_threads_to_finish = true;
+
+                if(threads.size() <= 0){
+                    goto giga_break;
+                }
+
+            }else{
+
+                if(threads.size() < MAX_THREADS){
+                    break;
+                }
+
+            }
+
+            {
+
+                float bytes_read_percent = 100.0f * static_cast<float>(bytes_read) / static_cast<float>(file_size);
+
+                cout << "progress: ";
+                cout << bytes_read_percent << "%";
+                if(waiting_for_last_threads_to_finish){
+                    cout << " (waiting for last threads to finish)";
+                }else{
+                    cout << " [bytes read: " << bytes_read << " / " << file_size << "]";
+                }
+                cout << " [threads: " << threads.size() << " / " << MAX_THREADS << "]" << endl;
+
             }
 
             this_thread::sleep_for(chrono::milliseconds(1'000));
@@ -627,70 +658,26 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
         blocks.push_back(tmp_file);
 
-        // print progress
-
-        {
-
-            float bytes_read_percent = 100.0f * static_cast<float>(bytes_read) / static_cast<float>(file_size);
-
-            cout << "progress: ";
-            cout << fixed<<setprecision(2)<<bytes_read_percent << "% [bytes read: " << bytes_read << " / " << file_size << "]";
-            cout << " [threads: " << threads.size() << " / " << MAX_THREADS << "]" << endl;
-
-        }
-
     }
+
+    giga_break:
 
     fclose(file_in);
 
-    while(true){
-
-        size_t total_threads = threads.size();
-        size_t finished_threads = 0;
-
-        for(atomic<bool> * finished : threads_finished){
-            if(finished->load()){
-                finished_threads += 1;
-            }
-        }
-
-        float progress_as_percent = static_cast<float>(finished_threads) * 100.0f / static_cast<float>(total_threads);
-
-        cout << "waiting for final threads to finish: " << progress_as_percent << "% (" << finished_threads << " / " << total_threads << ")" << endl;
-
-        if(finished_threads == total_threads){
-            break;
-        }
-
-        // sleep
-
-        // static int sleep = 100;
-
-        this_thread::sleep_for(chrono::milliseconds(1'000));
-
-        // sleep = (sleep * 105) / 100;
-        // if(sleep > 4'000){
-        //     sleep = 4'000;
-        // }
-
-    }
-
-    for(atomic<bool> * finished : threads_finished){
-        delete finished;
-    }
-
-    for(thread & thr : threads){
-        thr.join();
-    }
+    cout << "assembling file..." << endl;
 
     combine_files_and_delete(file_regenerated, blocks);
 
+    cout << "done" << endl;
 }
 
 int main(int argc, char * * argv){
 
     const string ACTION_ENCODE = "enc";
     const string ACTION_DECODE = "dec";
+
+    // if we are to print any floats, print them with 2 chars of precision
+    cout << fixed << setprecision(2);
 
     if(argc != 4){
         USER_ERR(
