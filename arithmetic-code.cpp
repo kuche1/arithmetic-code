@@ -480,7 +480,7 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
 
 }
 
-#define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
+#define TMP_FILE_PREFIX "/var/tmp/arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program
 
 void print_progress(size_t bytes_read, size_t bytes_max, bool waiting_for_last_threads_to_finish, size_t threads, size_t threads_max){
 
@@ -503,11 +503,9 @@ bool controll_multithreaded_workload(size_t bytes_read, size_t bytes_max, vector
 
         bool EOF_reached = bytes_read >= bytes_max;
 
-        bool waiting_for_last_threads_to_finish = false;
+        print_progress(bytes_read, bytes_max, EOF_reached, threads.size(), threads_max);
 
         if(EOF_reached){
-
-            waiting_for_last_threads_to_finish = true;
 
             if(threads.size() <= 0){
                 return true;
@@ -521,29 +519,39 @@ bool controll_multithreaded_workload(size_t bytes_read, size_t bytes_max, vector
 
         }
 
-        print_progress(bytes_read, bytes_max, waiting_for_last_threads_to_finish, threads.size(), threads_max);
+        bool at_least_one_thread_freed = false;
 
-        this_thread::sleep_for(chrono::milliseconds(1'000));
+        while(true){
 
-        for(ssize_t thr_idx = threads_finished.size()-1; thr_idx >= 0; --thr_idx){
-            atomic<bool> * finished = threads_finished[thr_idx];
+            for(ssize_t thr_idx = threads_finished.size()-1; thr_idx >= 0; --thr_idx){
+                atomic<bool> * finished = threads_finished[thr_idx];
 
-            if(finished->load()){
+                if(finished->load()){
 
-                // remove from vector
-                threads_finished[thr_idx] = move(threads_finished.back());
-                threads_finished.pop_back();
+                    at_least_one_thread_freed = true;
 
-                // free mem
-                delete finished;
+                    // remove from vector
+                    threads_finished[thr_idx] = move(threads_finished.back());
+                    threads_finished.pop_back();
 
-                // free mem
-                threads[thr_idx].join();
+                    // free mem
+                    delete finished;
 
-                // remove from vector
-                threads[thr_idx] = move(threads.back());
-                threads.pop_back();
+                    // free mem
+                    threads[thr_idx].join();
+
+                    // remove from vector
+                    threads[thr_idx] = move(threads.back());
+                    threads.pop_back();
+                }
             }
+
+            if(at_least_one_thread_freed){
+                break;
+            }else{
+                this_thread::sleep_for(chrono::milliseconds(35));
+            }
+
         }
 
     }
@@ -682,8 +690,8 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
 int main(int argc, char * * argv){
 
-    constexpr size_t THREADS_MAX_DEFAULT = 8;
-    constexpr size_t ENCODER_BLOCK_SIZE = 20480; // in bytes
+    constexpr size_t THREADS_MAX_DEFAULT = 11;
+    constexpr size_t ENCODER_BLOCK_SIZE = 10240; // in bytes
 
     const string ACTION_ENCODE = "enc";
     const string ACTION_DECODE = "dec";
