@@ -45,7 +45,7 @@ using namespace std;
     USER_ERR("Could not open file `" << path << "`"); \
 }
 
-#define SYMBOL_COUNTS_TYPE array<uint32_t, 256>
+#define SYMBOL_COUNTS_TYPE array<uint16_t, 256>
 // we need 1 count for each byte -> 2**8 -> length needs to be 256
 // with uint32_t we can count 2**32 -> 4294967296 times each character, so if a file consist all of the same character, the can process at max a  4GiB (4294967296 / 1024 / 1024 / 1024) file
 // with uint16_t we can count 2**16 -> 65536      times each character, so if a file consist all of the same character, the can process at max a 64KiB (65536      / 1024 / 1024 / 1024) file
@@ -78,7 +78,7 @@ SYMBOL_BOTS_TYPE calculate_symbol_bots(const SYMBOL_COUNTS_TYPE & symbol_counts)
         uint32_t base = 0;
 
         for(size_t symbol_idx = 0; symbol_idx < symbol_counts.size(); ++symbol_idx){
-            uint32_t symbol_count = symbol_counts.at(symbol_idx);
+            uint16_t symbol_count = symbol_counts.at(symbol_idx);
 
             uint32_t bot = base;
 
@@ -145,7 +145,7 @@ uint32_t calculate_total_number_of_symbols(const SYMBOL_COUNTS_TYPE & symbol_cou
     uint32_t total_number_of_symbols = 0;
 
     {
-        for(uint32_t count : symbol_counts){
+        for(uint16_t count : symbol_counts){
             total_number_of_symbols += count;
             ASSERT(total_number_of_symbols >= count); // overflow
         }
@@ -175,7 +175,7 @@ void calculate_possible_combinations(mpz_t & combinations, const SYMBOL_COUNTS_T
     // mpz_set_str(divisor, "1", 10);
     mpz_set_ui(divisor, 1u);
 
-    for(uint32_t count : symbol_counts){
+    for(uint16_t count : symbol_counts){
         mpz_t count_factorial;
         mpz_init(count_factorial);
 
@@ -264,8 +264,8 @@ void encode_block(const string & file_to_compress, size_t start_pos, size_t bloc
         file_out.open(file_compressed, ios::binary);
         ASSERT(file_out.is_open());
 
-        for(uint32_t count : symbol_counts){
-            uint32_t big_endian = htonl(count);
+        for(uint16_t count : symbol_counts){
+            uint16_t big_endian = htons(count);
             file_out.write(reinterpret_cast<char *>(&big_endian), sizeof(big_endian));
         }
     }
@@ -319,7 +319,7 @@ void encode_block(const string & file_to_compress, size_t start_pos, size_t bloc
             mpz_init_set(remaining_combinations, top);
             mpz_sub(remaining_combinations, remaining_combinations, bot);
 
-            uint32_t symbol_count = symbol_counts.at(symbol);
+            uint16_t symbol_count = symbol_counts.at(symbol);
             uint32_t symbol_bot = symbol_bots.at(symbol);
 
             // symbol_bot_scaled = remaining_combinations * symbol_bot / number_of_remaining_symbols
@@ -364,9 +364,6 @@ void encode_block(const string & file_to_compress, size_t start_pos, size_t bloc
 
 void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_around_gmp> num, const string & file_regenerated){
 
-    // cout << "DBG: num: ";
-    // gmp_printf("%Zd\n", num->get());
-
     // cout << "calculating symbol ranges..." << endl;
 
     SYMBOL_BOTS_TYPE symbol_bots = calculate_symbol_bots(symbol_counts);
@@ -408,7 +405,7 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
 
             for(size_t symbol_s = 0; symbol_s < symbol_counts.size(); ++symbol_s){
 
-                uint32_t symbol_count = symbol_counts.at(symbol_s);
+                uint16_t symbol_count = symbol_counts.at(symbol_s);
 
                 // using a vector with the remaining unique symbols, rather than having this if here actually makes the process (a tiny bit) slower
                 if(symbol_count <= 0){
@@ -644,12 +641,12 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
         SYMBOL_COUNTS_TYPE symbol_counts = {};
 
-        for(uint32_t & count : symbol_counts){
+        for(uint16_t & count : symbol_counts){
 
-            uint32_t big_endian;
+            uint16_t big_endian;
             ASSERT( fread(&big_endian, sizeof(big_endian), 1, file_in) == 1 );
 
-            count = ntohl(big_endian);
+            count = ntohs(big_endian);
         }
 
         // read data
