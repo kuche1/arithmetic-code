@@ -482,7 +482,6 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
 
 #define ENCODER_BLOCK_SIZE 20480 // in bytes
 #define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
-#define MAX_THREADS 8
 
 void print_progress(size_t bytes_read, size_t bytes_max, bool waiting_for_last_threads_to_finish, size_t threads, size_t threads_max){
 
@@ -499,7 +498,7 @@ void print_progress(size_t bytes_read, size_t bytes_max, bool waiting_for_last_t
 
 }
 
-bool controll_multithreaded_workload(size_t bytes_read, size_t bytes_max, vector<thread> & threads, vector<atomic<bool> *> & threads_finished){
+bool controll_multithreaded_workload(size_t bytes_read, size_t bytes_max, vector<thread> & threads, vector<atomic<bool> *> & threads_finished, size_t threads_max){
 
     while(true){
 
@@ -517,13 +516,13 @@ bool controll_multithreaded_workload(size_t bytes_read, size_t bytes_max, vector
 
         }else{
 
-            if(threads.size() < MAX_THREADS){
+            if(threads.size() < threads_max){
                 return false;
             }
 
         }
 
-        print_progress(bytes_read, bytes_max, waiting_for_last_threads_to_finish, threads.size(), MAX_THREADS);
+        print_progress(bytes_read, bytes_max, waiting_for_last_threads_to_finish, threads.size(), threads_max);
 
         this_thread::sleep_for(chrono::milliseconds(1'000));
 
@@ -552,7 +551,7 @@ bool controll_multithreaded_workload(size_t bytes_read, size_t bytes_max, vector
 
 }
 
-void encode_multithreaded(const string & file_to_compress, const string & file_compressed){
+void encode_multithreaded(const string & file_to_compress, const string & file_compressed, size_t threads_max){
 
     size_t file_size = get_file_size(file_to_compress);
 
@@ -567,7 +566,7 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
 
         {
 
-            bool end = controll_multithreaded_workload(start, file_size, threads, threads_finished);
+            bool end = controll_multithreaded_workload(start, file_size, threads, threads_finished, threads_max);
 
             if(end){
                 break;
@@ -605,7 +604,7 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
     cout << "done" << endl;
 }
 
-void decode_multithreaded(const string & file_compressed, const string & file_regenerated){
+void decode_multithreaded(const string & file_compressed, const string & file_regenerated, size_t threads_max){
 
     size_t file_size = get_file_size(file_compressed);
 
@@ -626,7 +625,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
             long bytes_read = ftell(file_in);
             ASSERT(bytes_read >= 0);
 
-            bool end = controll_multithreaded_workload(bytes_read, file_size, threads, threads_finished);
+            bool end = controll_multithreaded_workload(bytes_read, file_size, threads, threads_finished, threads_max);
 
             if(end){
                 break;
@@ -684,6 +683,8 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
 int main(int argc, char * * argv){
 
+    constexpr size_t THREADS_MAX_DEFAULT = 8;
+
     const string ACTION_ENCODE = "enc";
     const string ACTION_DECODE = "dec";
 
@@ -706,11 +707,11 @@ int main(int argc, char * * argv){
 
     if(action == ACTION_ENCODE){
 
-        encode_multithreaded(file_in, file_out);
+        encode_multithreaded(file_in, file_out, THREADS_MAX_DEFAULT);
 
     }else if(action == ACTION_DECODE){
 
-        decode_multithreaded(file_in, file_out);
+        decode_multithreaded(file_in, file_out, THREADS_MAX_DEFAULT);
 
     }else{
 
