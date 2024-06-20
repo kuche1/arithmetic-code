@@ -484,38 +484,118 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
 #define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
 #define MAX_THREADS 8
 
+void print_progress(size_t bytes_read, size_t bytes_max, bool waiting_for_last_threads_to_finish, size_t threads, size_t threads_max){
+
+    float bytes_read_percent = 100.0f * static_cast<float>(bytes_read) / static_cast<float>(bytes_max);
+
+    cout << "progress: ";
+    cout << bytes_read_percent << "%";
+    if(waiting_for_last_threads_to_finish){
+        cout << " (waiting for last threads to finish)";
+    }else{
+        cout << " [bytes read: " << bytes_read << " / " << bytes_max << "]";
+    }
+    cout << " [threads: " << threads << " / " << threads_max << "]" << endl;
+
+}
+
+bool controll_multithreaded_workload(size_t bytes_read, size_t bytes_max, vector<thread> & threads, vector<atomic<bool> *> & threads_finished){
+
+    while(true){
+
+        bool EOF_reached = bytes_read >= bytes_max;
+
+        bool waiting_for_last_threads_to_finish = false;
+
+        if(EOF_reached){
+
+            waiting_for_last_threads_to_finish = true;
+
+            if(threads.size() <= 0){
+                return true;
+            }
+
+        }else{
+
+            if(threads.size() < MAX_THREADS){
+                return false;
+            }
+
+        }
+
+        print_progress(bytes_read, bytes_max, waiting_for_last_threads_to_finish, threads.size(), MAX_THREADS);
+
+        this_thread::sleep_for(chrono::milliseconds(1'000));
+
+        for(ssize_t thr_idx = threads_finished.size()-1; thr_idx >= 0; --thr_idx){
+            atomic<bool> * finished = threads_finished[thr_idx];
+
+            if(finished->load()){
+
+                // remove from vector
+                threads_finished[thr_idx] = move(threads_finished.back());
+                threads_finished.pop_back();
+
+                // free mem
+                delete finished;
+
+                // free mem
+                threads[thr_idx].join();
+
+                // remove from vector
+                threads[thr_idx] = move(threads.back());
+                threads.pop_back();
+            }
+        }
+
+    }
+
+}
+
 void encode_multithreaded(const string & file_to_compress, const string & file_compressed){
 
     size_t file_size = get_file_size(file_to_compress);
 
     vector<string> blocks = {};
+
     vector<thread> threads = {};
+    vector<atomic<bool> *> threads_finished = {};
 
     size_t start = 0z;
-    size_t iter = 0;
 
-    cout << "starting threads..." << endl;
-    // TODO we could actually crash when starting the threads if they are too many (would be caused by big files)
+    for(size_t iter = 0z;; ++iter){
 
-    while(start < file_size){
+        {
 
-        string tmp_file = TMP_FILE_PREFIX + to_string(iter);
+            bool end = controll_multithreaded_workload(start, file_size, threads, threads_finished);
 
-        // encode_block(file_to_compress, start, ENCODER_BLOCK_SIZE, tmp_file);
-        threads.push_back( thread(encode_block, file_to_compress, start, ENCODER_BLOCK_SIZE, tmp_file) );
+            if(end){
+                break;
+            }
+            
+        }
 
-        blocks.push_back(tmp_file);
+        {
+
+            string tmp_file = TMP_FILE_PREFIX + to_string(iter);
+            blocks.push_back(tmp_file);
+
+            atomic<bool> * thread_done = new atomic<bool>(false);
+            threads_finished.push_back(thread_done);
+
+            threads.push_back(
+                thread(
+                    [file_to_compress, start, tmp_file, thread_done](){
+                        encode_block(file_to_compress, start, ENCODER_BLOCK_SIZE, tmp_file);
+                        thread_done->store(true);
+                    }
+                )
+            );
+
+        }
 
         start += ENCODER_BLOCK_SIZE;
 
-        iter += 1;
-
-    }
-
-    cout << "waiting for all threads to finish..." << endl;
-
-    for(thread & thr : threads){
-        thr.join();
     }
 
     cout << "assembling file..." << endl;
@@ -541,83 +621,17 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
     for(size_t iter = 0;; ++iter){
 
-        // check if EOF reached
-
-        bool EOF_reached = false;
-        long bytes_read = {};
-
         {
-            bytes_read = ftell(file_in);
+
+            long bytes_read = ftell(file_in);
             ASSERT(bytes_read >= 0);
 
-            size_t bytes_read_s = static_cast<size_t>(bytes_read);
+            bool end = controll_multithreaded_workload(bytes_read, file_size, threads, threads_finished);
 
-            if(bytes_read_s >= file_size){
-                EOF_reached = true;
+            if(end){
+                break;
             }
-
-        }
-
-        // block until a thread is available or break if all done
-
-        while(true){
-
-            bool waiting_for_last_threads_to_finish = false;
-
-            if(EOF_reached){
-
-                waiting_for_last_threads_to_finish = true;
-
-                if(threads.size() <= 0){
-                    goto giga_break;
-                }
-
-            }else{
-
-                if(threads.size() < MAX_THREADS){
-                    break;
-                }
-
-            }
-
-            {
-
-                float bytes_read_percent = 100.0f * static_cast<float>(bytes_read) / static_cast<float>(file_size);
-
-                cout << "progress: ";
-                cout << bytes_read_percent << "%";
-                if(waiting_for_last_threads_to_finish){
-                    cout << " (waiting for last threads to finish)";
-                }else{
-                    cout << " [bytes read: " << bytes_read << " / " << file_size << "]";
-                }
-                cout << " [threads: " << threads.size() << " / " << MAX_THREADS << "]" << endl;
-
-            }
-
-            this_thread::sleep_for(chrono::milliseconds(1'000));
-
-            for(ssize_t thr_idx = threads_finished.size()-1; thr_idx >= 0; --thr_idx){
-                atomic<bool> * finished = threads_finished[thr_idx];
-
-                if(finished->load()){
-
-                    // remove from vector
-                    threads_finished[thr_idx] = move(threads_finished.back());
-                    threads_finished.pop_back();
-
-                    // free mem
-                    delete finished;
-
-                    // free mem
-                    threads[thr_idx].join();
-
-                    // remove from vector
-                    threads[thr_idx] = move(threads.back());
-                    threads.pop_back();
-                }
-            }
-
+            
         }
 
         // read header
@@ -646,6 +660,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
         threads_finished.push_back(thread_done);
 
         string tmp_file = TMP_FILE_PREFIX + to_string(iter);
+        blocks.push_back(tmp_file);
 
         threads.push_back(
             thread(
@@ -656,11 +671,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
             )
         );
 
-        blocks.push_back(tmp_file);
-
     }
-
-    giga_break:
 
     fclose(file_in);
 
