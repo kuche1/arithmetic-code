@@ -480,7 +480,6 @@ void decode_block(SYMBOL_COUNTS_TYPE symbol_counts, shared_ptr<fuck_wrapper_arou
 
 }
 
-#define ENCODER_BLOCK_SIZE 20480 // in bytes
 #define TMP_FILE_PREFIX "arithmetic-code-tmp-" // TODO what if we're running 2 instances of the program in the same directory
 
 void print_progress(size_t bytes_read, size_t bytes_max, bool waiting_for_last_threads_to_finish, size_t threads, size_t threads_max){
@@ -551,7 +550,7 @@ bool controll_multithreaded_workload(size_t bytes_read, size_t bytes_max, vector
 
 }
 
-void encode_multithreaded(const string & file_to_compress, const string & file_compressed, size_t threads_max){
+void encode_multithreaded(const string & file_to_compress, const string & file_compressed, uint32_t block_size, size_t threads_max){
 
     size_t file_size = get_file_size(file_to_compress);
 
@@ -584,8 +583,8 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
 
             threads.push_back(
                 thread(
-                    [file_to_compress, start, tmp_file, thread_done](){
-                        encode_block(file_to_compress, start, ENCODER_BLOCK_SIZE, tmp_file);
+                    [file_to_compress, start, tmp_file, thread_done, block_size](){
+                        encode_block(file_to_compress, start, block_size, tmp_file);
                         thread_done->store(true);
                     }
                 )
@@ -593,7 +592,7 @@ void encode_multithreaded(const string & file_to_compress, const string & file_c
 
         }
 
-        start += ENCODER_BLOCK_SIZE;
+        start += block_size;
 
     }
 
@@ -684,6 +683,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 int main(int argc, char * * argv){
 
     constexpr size_t THREADS_MAX_DEFAULT = 8;
+    constexpr size_t ENCODER_BLOCK_SIZE = 20480; // in bytes
 
     const string ACTION_ENCODE = "enc";
     const string ACTION_DECODE = "dec";
@@ -707,7 +707,7 @@ int main(int argc, char * * argv){
 
     if(action == ACTION_ENCODE){
 
-        encode_multithreaded(file_in, file_out, THREADS_MAX_DEFAULT);
+        encode_multithreaded(file_in, file_out, ENCODER_BLOCK_SIZE, THREADS_MAX_DEFAULT);
 
     }else if(action == ACTION_DECODE){
 
