@@ -542,23 +542,18 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
         // check if EOF reached
 
-        size_t progress_bytes_read = {};
-        size_t progress_bytes_max = {};
-        float progress_bytes_read_percent = {};
+        long bytes_read = {};
 
         {
-            long cur = ftell(file_in);
-            ASSERT(cur >= 0);
+            bytes_read = ftell(file_in);
+            ASSERT(bytes_read >= 0);
 
-            size_t cur_s = static_cast<size_t>(cur);
+            size_t bytes_read_s = static_cast<size_t>(bytes_read);
 
-            if(cur_s >= file_size){
+            if(bytes_read_s >= file_size){
                 break;
             }
 
-            progress_bytes_read = cur_s;
-            progress_bytes_max = file_size;
-            progress_bytes_read_percent = 100 * static_cast<float>(progress_bytes_read) / static_cast<float>(progress_bytes_max);
         }
 
         // block until a thread is available
@@ -634,7 +629,15 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 
         // print progress
 
-        cout << "progress: " << fixed<<setprecision(2)<<progress_bytes_read_percent << "% [bytes read: " << progress_bytes_read << " / " << progress_bytes_max << "] [threads: " << threads.size() << " / " << MAX_THREADS << "]" << endl;
+        {
+
+            float bytes_read_percent = 100.0f * static_cast<float>(bytes_read) / static_cast<float>(file_size);
+
+            cout << "progress: ";
+            cout << fixed<<setprecision(2)<<bytes_read_percent << "% [bytes read: " << bytes_read << " / " << file_size << "]";
+            cout << " [threads: " << threads.size() << " / " << MAX_THREADS << "]" << endl;
+
+        }
 
     }
 
