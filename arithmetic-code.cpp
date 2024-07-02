@@ -669,7 +669,7 @@ void decode_multithreaded(const string & file_compressed, const string & file_re
 int main(int argc, char * * argv){
 
     constexpr size_t THREADS_MAX_DEFAULT = 11;
-    constexpr size_t ENCODER_BLOCK_SIZE = 81920; // in bytes
+    constexpr size_t ENCODER_BLOCK_SIZE = 40960; // in bytes
 
     const string ACTION_ENCODE = "enc";
     const string ACTION_DECODE = "dec";
