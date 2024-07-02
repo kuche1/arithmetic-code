@@ -57,7 +57,17 @@ HERE=$(readlink -f $(dirname -- "$BASH_SOURCE"))
 
 ### 1b0f1c08269028524d0cf183152795b2598fc647 reduced blocksize to 20480
 
-FILE=pmv-655360 # 640k; encode 0m0,546s; decode 0m26,445s; compression ratio 0.4921966552734375
+#FILE=pmv-655360 # 640k; encode 0m0,546s; decode 0m26,445s; compression ratio 0.4921966552734375
+
+### <?> blocksizse increased from 20480 to 81920; optimised encoder/decoder by: reducing variable creation/deletion + reducing the number being worked on to the lowest value possible
+
+# before enc opt: 0m3,098s
+# after  enc opt: 0m2,325s
+
+# before dec opt: 3m47,068s
+# after  dec opt: 3m06,233s
+
+FILE=pmv-655360 # 640k; encode 0m3,098s; decode 3m47,068s
 
 clear
 
