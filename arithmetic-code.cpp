@@ -1,4 +1,10 @@
 
+// TODO
+//
+// make it so that instead of constantly creating and deleting new threads
+// we spawn N threads, then we give each of them the workload that they are
+// expected to fulfil (or we get them to ask for new work)
+
 #include <iostream>
 #include <fstream>
 #include <cassert>
